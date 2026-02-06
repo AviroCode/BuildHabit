@@ -19,11 +19,21 @@ import { isToday, format } from 'date-fns';
 
 export default function FocusDashboard() {
   const { habits, logs, addLog, updateLog } = useHabitStore();
+  const [isMounted, setIsMounted] = useState(false);
   const [swipeDirection, setSwipeDirection] = useState<string | null>(null);
   const [showFrictionModal, setShowFrictionModal] = useState<{
     show: boolean;
     habitId: string;
   }>({ show: false, habitId: '' });
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted) {
+    // Avoid SSR/CSR mismatches for time- and locale-based UI
+    return null;
+  }
 
   const currentTime = getTimeOfDay();
   const nowHabits = getHabitsForTimeBlock(habits, currentTime);

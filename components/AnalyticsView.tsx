@@ -1,12 +1,22 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import { useHabitStore } from '@/lib/store';
 import { isToday, format, startOfYear, eachDayOfInterval, isSameDay } from 'date-fns';
 import { calculateStreak } from '@/lib/utils';
 
 export default function AnalyticsView() {
   const { habits, logs } = useHabitStore();
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted) {
+    // Defer all date-based analytics to the client to avoid hydration mismatch
+    return null;
+  }
 
   const completionRates = useMemo(() => {
     const rates: Record<string, { completed: number; total: number; rate: number }> = {};
