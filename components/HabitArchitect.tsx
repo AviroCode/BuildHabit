@@ -30,12 +30,27 @@ export default function HabitArchitect({ onComplete }: HabitArchitectProps) {
 
     setLoading(true);
     try {
-      // In a real app, you'd get user_id from auth
+      // Get the currently authenticated user from Supabase Auth
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError) {
+        console.error('Error fetching user:', userError);
+        throw new Error('Unable to fetch authenticated user');
+      }
+
+      if (!user) {
+        alert('You must be signed in to create habits.');
+        return;
+      }
+
       const { data, error } = await supabase
         .from('habits')
         .insert({
           ...formData,
-          user_id: 'demo-user', // Replace with actual user ID from auth
+          user_id: user.id, // real Supabase auth user id (UUID)
         })
         .select()
         .single();
