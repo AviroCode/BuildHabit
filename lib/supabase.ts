@@ -1,12 +1,43 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+// Get environment variables and trim whitespace
+const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').trim();
+const supabaseAnonKey = (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '').trim();
+
+// Validate URL format
+const isValidUrl = (url: string): boolean => {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+};
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn('Supabase credentials not found. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY');
+  console.error('❌ Supabase credentials not found!');
+  console.error('Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local');
+  console.error('Current values:', {
+    url: supabaseUrl || '(empty)',
+    key: supabaseAnonKey ? `${supabaseAnonKey.substring(0, 10)}...` : '(empty)',
+  });
 }
 
+if (supabaseUrl && !isValidUrl(supabaseUrl)) {
+  console.error('❌ Invalid Supabase URL format:', supabaseUrl);
+  console.error('URL must start with http:// or https://');
+}
+
+// Create client - throw error if invalid to catch issues early
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error(
+    'Missing Supabase credentials. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local'
+  );
+}
+
+if (!isValidUrl(supabaseUrl)) {
+  throw new Error(`Invalid Supabase URL: "${supabaseUrl}". Must be a valid HTTP or HTTPS URL.`);
+}
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 

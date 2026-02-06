@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useHabitStore } from '@/lib/store';
-import { supabase, Habit, HabitLog } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 import FocusDashboard from '@/components/FocusDashboard';
 import HabitArchitect from '@/components/HabitArchitect';
 import AnalyticsView from '@/components/AnalyticsView';
@@ -13,10 +13,6 @@ type View = 'focus' | 'architect' | 'analytics';
 export default function Home() {
   const [currentView, setCurrentView] = useState<View>('focus');
   const { habits, logs, setHabits, setLogs, loading, setLoading } = useHabitStore();
-
-  useEffect(() => {
-    loadData();
-  }, []);
 
   async function loadData() {
     setLoading(true);
@@ -46,6 +42,12 @@ export default function Home() {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    loadData();
+    // We intentionally don't include loadData in deps to avoid ref churn
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">

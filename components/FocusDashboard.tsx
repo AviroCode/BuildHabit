@@ -118,7 +118,7 @@ export default function FocusDashboard() {
       {/* Now Stack */}
       <section className="px-4 py-6">
         <h2 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-4">
-          The "Now" Stack
+          The &quot;Now&quot; Stack
         </h2>
         {allNowCompleted ? (
           <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-6 text-center">
@@ -154,7 +154,7 @@ export default function FocusDashboard() {
       {laterHabits.length > 0 && (
         <section className="px-4 py-6 border-t border-slate-200 dark:border-slate-700">
           <h2 className="text-lg font-semibold text-slate-500 dark:text-slate-400 mb-4">
-            The "Later" Queue
+            The &quot;Later&quot; Queue
           </h2>
           <div className="space-y-2">
             {laterHabits.map((habit) => (
