@@ -13,12 +13,12 @@ export default function AnalyticsView() {
     setIsMounted(true);
   }, []);
 
-  if (!isMounted) {
-    // Defer all date-based analytics to the client to avoid hydration mismatch
-    return null;
-  }
-
   const completionRates = useMemo(() => {
+    if (!isMounted) {
+      // Before mount (SSR / initial hydration), avoid date-dependent work
+      return {} as Record<string, { completed: number; total: number; rate: number }>;
+    }
+
     const rates: Record<string, { completed: number; total: number; rate: number }> = {};
 
     habits.forEach((habit) => {
@@ -33,9 +33,19 @@ export default function AnalyticsView() {
     });
 
     return rates;
-  }, [habits, logs]);
+  }, [habits, logs, isMounted]);
 
   const heatmapData = useMemo(() => {
+    if (!isMounted) {
+      // Render an empty heatmap on the server; client will fill it after mount
+      return [] as Array<{
+        date: Date;
+        count: number;
+        total: number;
+        intensity: number;
+      }>;
+    }
+
     const yearStart = startOfYear(new Date());
     const today = new Date();
     const days = eachDayOfInterval({ start: yearStart, end: today });
@@ -55,7 +65,7 @@ export default function AnalyticsView() {
         intensity: totalHabits > 0 ? completedCount / totalHabits : 0,
       };
     });
-  }, [logs, habits]);
+  }, [logs, habits, isMounted]);
 
   const getIntensityColor = (intensity: number) => {
     if (intensity === 0) return 'bg-slate-100 dark:bg-slate-800';
