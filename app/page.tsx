@@ -3,21 +3,38 @@
 import { useEffect, useState } from 'react';
 import { useHabitStore } from '@/lib/store';
 import { supabase } from '@/lib/supabase';
+import type { Session } from '@supabase/supabase-js';
+import Auth from '@/components/Auth';
 import FocusDashboard from '@/components/FocusDashboard';
 import HabitArchitect from '@/components/HabitArchitect';
 import AnalyticsView from '@/components/AnalyticsView';
-import { getTimeOfDay } from '@/lib/utils';
 
 type View = 'focus' | 'architect' | 'analytics';
 
 export default function Home() {
+  const [session, setSession] = useState<Session | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [currentView, setCurrentView] = useState<View>('focus');
-  const { habits, logs, setHabits, setLogs, loading, setLoading } = useHabitStore();
+  const { setHabits, setLogs, setLoading } = useHabitStore();
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session: s } }) => {
+      setSession(s);
+      setAuthLoading(false);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, s) => {
+      setSession(s);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   async function loadData() {
     setLoading(true);
     try {
-      // In a real app, you'd filter by user_id from auth
       const { data: habitsData, error: habitsError } = await supabase
         .from('habits')
         .select('*')
@@ -44,13 +61,38 @@ export default function Home() {
   }
 
   useEffect(() => {
-    loadData();
-    // We intentionally don't include loadData in deps to avoid ref churn
+    if (session) loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [session]);
+
+  if (authLoading) {
+    return (
+      <main className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center">
+        <p className="text-slate-600 dark:text-slate-400">Loading…</p>
+      </main>
+    );
+  }
+
+  if (!session) {
+    return <Auth />;
+  }
+
+  async function handleSignOut() {
+    await supabase.auth.signOut();
+  }
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+      <header className="sticky top-0 z-40 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 py-2 flex items-center justify-between">
+        <span className="font-semibold text-slate-900 dark:text-white">Habit OS</span>
+        <button
+          type="button"
+          onClick={handleSignOut}
+          className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+        >
+          Sign out
+        </button>
+      </header>
       <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 z-50">
         <div className="flex justify-around items-center h-16">
           <button
@@ -97,7 +139,9 @@ export default function Home() {
 
       <div className="pb-16">
         {currentView === 'focus' && <FocusDashboard />}
-        {currentView === 'architect' && <HabitArchitect onComplete={loadData} />}
+        {currentView === 'architect' && (
+          <HabitArchitect session={session} onComplete={loadData} />
+        )}
         {currentView === 'analytics' && <AnalyticsView />}
       </div>
     </main>

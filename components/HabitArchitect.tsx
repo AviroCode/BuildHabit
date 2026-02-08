@@ -1,14 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { supabase, Habit } from '@/lib/supabase';
-import { useHabitStore } from '@/lib/store';
+import { supabase } from '@/lib/supabase';
+import type { Session } from '@supabase/supabase-js';
 
 interface HabitArchitectProps {
+  session: Session;
   onComplete: () => void;
 }
 
-export default function HabitArchitect({ onComplete }: HabitArchitectProps) {
+export default function HabitArchitect({ session, onComplete }: HabitArchitectProps) {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     title: '',
@@ -30,27 +31,11 @@ export default function HabitArchitect({ onComplete }: HabitArchitectProps) {
 
     setLoading(true);
     try {
-      // Get the currently authenticated user from Supabase Auth
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-
-      if (userError) {
-        console.error('Error fetching user:', userError);
-        throw new Error('Unable to fetch authenticated user');
-      }
-
-      if (!user) {
-        alert('You must be signed in to create habits.');
-        return;
-      }
-
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('habits')
         .insert({
           ...formData,
-          user_id: user.id, // real Supabase auth user id (UUID)
+          user_id: session.user.id,
         })
         .select()
         .single();
